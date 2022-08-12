@@ -11,6 +11,7 @@ namespace SwitchHosts
     public class SwitchHostService
     {
         private static string hostsFilePath = "C:\\Windows\\System32\\drivers\\etc\\hosts";
+        private static object _lockObj = new object();
 
         private Dictionary<string, string[]>? _hostConfig = new Dictionary<string, string[]>();
 
@@ -28,47 +29,53 @@ namespace SwitchHosts
         /// </summary>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<string> ExecuteAsync()
+        public string Execute()
         {
-            if (_hostConfig == null || _hostConfig.Count == 0)
+            lock (_lockObj)
             {
-                return "HostConfigs.json is empty!";
-            }
-
-            string resultStr = string.Empty;
-            foreach (var kvItem in _hostConfig)
-            {
-                var hostName = kvItem.Key;
-                string hostIP = null;
-                foreach (var ip in kvItem.Value)
+                if (_hostConfig == null || _hostConfig.Count == 0)
                 {
-                    if (IPReachable(ip))
+                    return "HostConfigs.json is empty!";
+                }
+
+                string resultStr = string.Empty;
+                foreach (var kvItem in _hostConfig)
+                {
+                    var hostName = kvItem.Key;
+                    string hostIP = null;
+                    foreach (var ip in kvItem.Value)
                     {
-                        hostIP = ip;
-                        break;
+                        if (IPReachable(ip))
+                        {
+                            hostIP = ip;
+                            break;
+                        }
                     }
+
+                    if (string.IsNullOrEmpty(hostIP))
+                    {
+                        RemoveHostNameInHostsFile(hostName);
+                        resultStr += $"remove host: {hostName}\r\n";
+                    }
+                    else
+                    {
+                        UpdateHostNameInHostsFile(hostName, hostIP);
+                    }
+
+                    resultStr += $"update host: {hostName} {hostIP}\r\n";
                 }
 
-                if (string.IsNullOrEmpty(hostIP))
-                {
-                    await RemoveHostNameInHostsFile(hostName);
-                    resultStr += $"remove host: {hostName}\r\n";
-                }
-
-                await UpdateHostNameInHostsFile(hostName, hostIP);
-                resultStr += $"update host: {hostName} {hostIP}\r\n";
+                return resultStr;
             }
-
-            return resultStr;
         }
 
-        private async Task UpdateHostNameInHostsFile(string hostName, string hostIp)
+        private void UpdateHostNameInHostsFile(string hostName, string hostIp)
         {
             const string sectionStartStr = "# Added by SwitchHosts service";
             const string sectionEndStr = "# End of section";
             string toUpdateHostNameLine = $"{hostIp} {hostName}";
 
-            var hostsAllLines = await File.ReadAllLinesAsync(hostsFilePath);
+            var hostsAllLines = File.ReadAllLines(hostsFilePath);
             var hostsAllLinesList = hostsAllLines.ToList();
             bool hostNameExits = false;
             for (int i = 0; i < hostsAllLinesList.Count; i++)
@@ -104,13 +111,13 @@ namespace SwitchHosts
 
             if (!hostsAllLines.SequenceEqual(hostsAllLinesList))
             {
-                await File.WriteAllLinesAsync(hostsFilePath, hostsAllLinesList);
+                File.WriteAllLines(hostsFilePath, hostsAllLinesList);
             }
         }
 
-        private async Task RemoveHostNameInHostsFile(string hostName)
+        private void RemoveHostNameInHostsFile(string hostName)
         {
-            var hostsAllLines = await File.ReadAllLinesAsync(hostsFilePath);
+            var hostsAllLines = File.ReadAllLines(hostsFilePath);
             var hostsAllLinesList = hostsAllLines.ToList();
             for (int i = 0; i < hostsAllLinesList.Count; i++)
             {
@@ -120,7 +127,7 @@ namespace SwitchHosts
                     hostsAllLinesList.RemoveAt(i);
                 }
             }
-            await File.WriteAllLinesAsync(hostsFilePath, hostsAllLinesList);
+            File.WriteAllLines(hostsFilePath, hostsAllLinesList);
         }
 
         public bool IPReachable(string ip)
