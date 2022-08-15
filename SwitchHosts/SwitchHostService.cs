@@ -132,16 +132,24 @@ namespace SwitchHosts
 
         public bool IPReachable(string ip)
         {
-            Ping ping = new Ping();
-            PingReply pingReply = ping.Send(ip);
-
-            if (pingReply.Status == IPStatus.Success)
+            try
             {
-                //Server is alive
-                return true;
-            }
+                Ping ping = new Ping();
+                PingReply pingReply = ping.Send(ip);
 
-            return false;
+                if (pingReply.Status == IPStatus.Success)
+                {
+                    //Server is alive
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return false;
+            }
         }
     }
 }
