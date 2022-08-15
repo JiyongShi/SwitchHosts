@@ -72,7 +72,7 @@ namespace SwitchHosts
         private void UpdateHostNameInHostsFile(string hostName, string hostIp)
         {
             const string sectionStartStr = "# Added by SwitchHosts service";
-            const string sectionEndStr = "# End of section";
+            const string sectionEndStr = "# End of SwitchHosts section";
             string toUpdateHostNameLine = $"{hostIp} {hostName}";
 
             var hostsAllLines = File.ReadAllLines(hostsFilePath);
