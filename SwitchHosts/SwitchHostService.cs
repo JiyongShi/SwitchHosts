@@ -33,38 +33,45 @@ namespace SwitchHosts
         {
             lock (_lockObj)
             {
+                string resultStr = string.Empty;
                 if (_hostConfig == null || _hostConfig.Count == 0)
                 {
                     return "HostConfigs.json is empty!";
                 }
 
-                string resultStr = string.Empty;
-                foreach (var kvItem in _hostConfig)
+                try
                 {
-                    var hostName = kvItem.Key;
-                    string hostIP = null;
-                    foreach (var ip in kvItem.Value)
+                    foreach (var kvItem in _hostConfig)
                     {
-                        if (IPReachable(ip))
+                        var hostName = kvItem.Key;
+                        string hostIP = null;
+                        foreach (var ip in kvItem.Value)
                         {
-                            hostIP = ip;
-                            break;
+                            if (IPReachable(ip))
+                            {
+                                hostIP = ip;
+                                break;
+                            }
                         }
+
+                        if (string.IsNullOrEmpty(hostIP))
+                        {
+                            RemoveHostNameInHostsFile(hostName);
+                            resultStr += $"remove host: {hostName}\r\n";
+                        }
+                        else
+                        {
+                            UpdateHostNameInHostsFile(hostName, hostIP);
+                        }
+
+                        resultStr += $"update host: {hostName} {hostIP}\r\n";
                     }
 
-                    if (string.IsNullOrEmpty(hostIP))
-                    {
-                        RemoveHostNameInHostsFile(hostName);
-                        resultStr += $"remove host: {hostName}\r\n";
-                    }
-                    else
-                    {
-                        UpdateHostNameInHostsFile(hostName, hostIP);
-                    }
-
-                    resultStr += $"update host: {hostName} {hostIP}\r\n";
                 }
-
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
                 return resultStr;
             }
         }
