@@ -1,4 +1,5 @@
-﻿using System.Net.NetworkInformation;
+﻿using System.Diagnostics;
+using System.Net.NetworkInformation;
 using System.Text.Json;
 
 namespace SwitchHosts
@@ -134,7 +135,11 @@ namespace SwitchHosts
                     hostsAllLinesList.RemoveAt(i);
                 }
             }
-            File.WriteAllLines(hostsFilePath, hostsAllLinesList);
+
+            if (!hostsAllLines.SequenceEqual(hostsAllLinesList))
+            {
+                File.WriteAllLines(hostsFilePath, hostsAllLinesList);
+            }
         }
 
         public bool IPReachable(string ip)
