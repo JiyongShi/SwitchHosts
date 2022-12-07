@@ -2,12 +2,12 @@ using System.Net.NetworkInformation;
 
 namespace SwitchHosts;
 
-public class Worker : BackgroundService
+public class SwitchHostWorker : BackgroundService
 {
     private readonly SwitchHostService _switchHostService;
-    private readonly ILogger<Worker> _logger;
+    private readonly ILogger<SwitchHostWorker> _logger;
 
-    public Worker(ILogger<Worker> logger, SwitchHostService switchHostService)
+    public SwitchHostWorker(ILogger<SwitchHostWorker> logger, SwitchHostService switchHostService)
     {
         _logger = logger;
         _switchHostService = switchHostService;
@@ -28,7 +28,7 @@ public class Worker : BackgroundService
             string executeResult = _switchHostService.Execute();
             _logger.LogInformation("{executeResult}", executeResult);
 
-            _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+            _logger.LogInformation("SwitchHostWorker running at: {time}", DateTimeOffset.Now);
             await Task.Delay(300000, stoppingToken);
         }
     }

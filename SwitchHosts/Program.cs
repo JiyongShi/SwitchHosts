@@ -8,8 +8,10 @@ IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
     {
         services.AddSingleton<SwitchHostService>();
+        services.AddSingleton<GithubHostsService>();
 
-        services.AddHostedService<Worker>();
+        services.AddHostedService<SwitchHostWorker>();
+        services.AddHostedService<GitHubHostsWorker>();
     })
     .ConfigureLogging((context, logging) =>
     {

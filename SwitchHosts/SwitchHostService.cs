@@ -11,16 +11,16 @@ namespace SwitchHosts
     /// </summary>
     public class SwitchHostService
     {
-        private static string hostsFilePath = "C:\\Windows\\System32\\drivers\\etc\\hosts";
-        private static object _lockObj = new object();
+        private readonly ILogger<SwitchHostService> _logger;
 
         private Dictionary<string, string[]>? _hostConfig = new Dictionary<string, string[]>();
 
         /// <summary>
         /// 
         /// </summary>
-        public SwitchHostService()
+        public SwitchHostService(ILogger<SwitchHostService> logger)
         {
+            _logger = logger;
             var configStr = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "HostConfigs.json"));
             _hostConfig = JsonSerializer.Deserialize<Dictionary<string, string[]>>(configStr);
         }
@@ -32,7 +32,7 @@ namespace SwitchHosts
         /// <exception cref="NotImplementedException"></exception>
         public string Execute()
         {
-            lock (_lockObj)
+            lock (HostsWriteLock.LockObj)
             {
                 string resultStr = string.Empty;
                 if (_hostConfig == null || _hostConfig.Count == 0)
@@ -83,7 +83,7 @@ namespace SwitchHosts
             const string sectionEndStr = "# End of SwitchHosts section";
             string toUpdateHostNameLine = $"{hostIp} {hostName}";
 
-            var hostsAllLines = File.ReadAllLines(hostsFilePath);
+            var hostsAllLines = File.ReadAllLines(HostsWriteLock.HostsFilePath);
             var hostsAllLinesList = hostsAllLines.ToList();
             bool hostNameExits = false;
             for (int i = 0; i < hostsAllLinesList.Count; i++)
@@ -119,13 +119,13 @@ namespace SwitchHosts
 
             if (!hostsAllLines.SequenceEqual(hostsAllLinesList))
             {
-                File.WriteAllLines(hostsFilePath, hostsAllLinesList);
+                File.WriteAllLines(HostsWriteLock.HostsFilePath, hostsAllLinesList);
             }
         }
 
         private void RemoveHostNameInHostsFile(string hostName)
         {
-            var hostsAllLines = File.ReadAllLines(hostsFilePath);
+            var hostsAllLines = File.ReadAllLines(HostsWriteLock.HostsFilePath);
             var hostsAllLinesList = hostsAllLines.ToList();
             for (int i = 0; i < hostsAllLinesList.Count; i++)
             {
@@ -138,7 +138,7 @@ namespace SwitchHosts
 
             if (!hostsAllLines.SequenceEqual(hostsAllLinesList))
             {
-                File.WriteAllLines(hostsFilePath, hostsAllLinesList);
+                File.WriteAllLines(HostsWriteLock.HostsFilePath, hostsAllLinesList);
             }
         }
 
