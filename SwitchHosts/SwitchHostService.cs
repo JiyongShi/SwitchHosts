@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.NetworkInformation;
 using System.Text.Json;
 
@@ -13,16 +14,17 @@ namespace SwitchHosts
     {
         private readonly ILogger<SwitchHostService> _logger;
 
-        private Dictionary<string, string[]>? _hostConfig = new Dictionary<string, string[]>();
+        private readonly HostConfiguration? _hostConfig;
 
         /// <summary>
         /// 
         /// </summary>
+        [RequiresDynamicCode("JsonDeSerializer")]
         public SwitchHostService(ILogger<SwitchHostService> logger)
         {
             _logger = logger;
             var configStr = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "HostConfigs.json"));
-            _hostConfig = JsonSerializer.Deserialize<Dictionary<string, string[]>>(configStr);
+            _hostConfig = JsonSerializer.Deserialize<HostConfiguration>(configStr, JsonSourceGenerationContext.Default.HostConfiguration);
         }
 
         /// <summary>
@@ -45,7 +47,7 @@ namespace SwitchHosts
                     foreach (var kvItem in _hostConfig)
                     {
                         var hostName = kvItem.Key;
-                        string hostIP = null;
+                        string? hostIP = null;
                         foreach (var ip in kvItem.Value)
                         {
                             if (IPReachable(ip))
@@ -77,7 +79,7 @@ namespace SwitchHosts
             }
         }
 
-        private void UpdateHostNameInHostsFile(string hostName, string hostIp)
+        private void UpdateHostNameInHostsFile(string hostName, string? hostIp)
         {
             const string sectionStartStr = "# Added by SwitchHosts service";
             const string sectionEndStr = "# End of SwitchHosts section";
@@ -142,8 +144,13 @@ namespace SwitchHosts
             }
         }
 
-        public bool IPReachable(string ip)
+        public bool IPReachable(string? ip)
         {
+            if (ip == null)
+            {
+                return false;
+            }
+
             try
             {
                 Ping ping = new Ping();
