@@ -73,7 +73,7 @@ namespace SwitchHosts
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    _logger.LogError(ex, "Error execute updating hosts file");
                 }
                 return resultStr;
             }
@@ -164,9 +164,9 @@ namespace SwitchHosts
 
                 return false;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e);
+                _logger.LogError(ex, "Error checking IP address reachability");
                 return false;
             }
         }

@@ -41,8 +41,7 @@
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                _logger.LogError("GetGithubHostsContent: " + ex.Message + ex.StackTrace);
+                _logger.LogError(ex, "GetGithubHostsContent error");
             }
 
             return new List<string>();
