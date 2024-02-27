@@ -153,8 +153,8 @@ namespace SwitchHosts
 
             try
             {
-                Ping ping = new Ping();
-                PingReply pingReply = ping.Send(ip);
+                using Ping ping = new Ping();
+                var pingReply = ping.Send(ip);
 
                 if (pingReply.Status == IPStatus.Success)
                 {
